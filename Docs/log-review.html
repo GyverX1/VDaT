@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VDaT Log Review</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0a0a;
+      color: #0ff;
+      font-family: monospace;
+      padding: 24px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    h1 { color: #ff0; font-size: 2em; letter-spacing: 2px; margin-bottom: 2px; }
+    .subtitle { color: #888; font-size: 0.9em; margin-bottom: 24px; }
+    .session-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding: 14px 18px;
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 8px;
+    }
+    .meta-item { display: flex; flex-direction: column; gap: 2px; }
+    .meta-label { font-size: 0.75em; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+    .meta-value { font-size: 1.05em; color: #ff0; font-weight: bold; }
+    .drop-zone {
+      border: 2px dashed #0ff;
+      border-radius: 10px;
+      padding: 48px;
+      text-align: center;
+      cursor: pointer;
+      margin-bottom: 24px;
+      transition: background 0.2s;
+    }
+    .drop-zone:hover, .drop-zone.drag-over { background: #0ff1; }
+    .drop-zone p { color: #aaa; margin-bottom: 14px; font-size: 1em; }
+    .drop-zone input { display: none; }
+    .drop-btn {
+      background: #111; color: #0ff; border: 1px solid #0ff;
+      border-radius: 6px; padding: 10px 24px;
+      font-family: monospace; font-size: 1em; cursor: pointer;
+    }
+    .drop-btn:hover { background: #0ff; color: #000; }
+    .section-title {
+      color: #ff0; font-size: 0.95em; letter-spacing: 1px;
+      margin: 24px 0 10px 0;
+      border-bottom: 1px solid #222; padding-bottom: 6px;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .stat-card {
+      background: #111; border: 1px solid #0ff;
+      border-radius: 8px; padding: 14px; text-align: center;
+    }
+    .stat-card.warn-card { border-color: #f80; }
+    .stat-card.danger-card { border-color: #f00; }
+    .stat-label { font-size: 0.78em; color: #888; margin-bottom: 6px; }
+    .stat-value { font-size: 1.5em; color: #0ff; font-weight: bold; }
+    .stat-value.amber { color: #f80; }
+    .stat-value.red   { color: #f00; }
+    .warn-breakdown {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .warn-axis {
+      background: #111; border: 1px solid #444;
+      border-radius: 8px; padding: 12px 16px;
+    }
+    .warn-axis-label { font-size: 0.8em; color: #888; margin-bottom: 4px; }
+    .warn-axis-count { font-size: 1.3em; color: #f80; font-weight: bold; }
+    .warn-axis-time  { font-size: 0.8em; color: #888; margin-top: 2px; }
+    .timeline-wrap {
+      height: 18px;
+      background: #1a1a1a;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 6px;
+      position: relative;
+    }
+    .timeline-label {
+      font-size: 0.75em; color: #444;
+      margin-bottom: 16px;
+    }
+    canvas {
+      width: 100%; height: auto;
+      background: #0a0a0a;
+      border: 1px solid #222; border-radius: 8px;
+      display: block; margin-bottom: 8px;
+    }
+    .legend {
+      display: flex; gap: 20px;
+      font-size: 0.8em; margin-bottom: 20px;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 14px; height: 3px; border-radius: 2px; }
+    .highlight-box {
+      background: #111; border: 1px solid #333;
+      border-radius: 8px; padding: 14px 18px;
+      margin-bottom: 16px;
+    }
+    .highlight-label { font-size: 0.78em; color: #888; margin-bottom: 6px; }
+    .highlight-value { font-size: 1.1em; color: #fff; }
+    .highlight-value span { color: #f80; }
+    table {
+      width: 100%; border-collapse: collapse;
+      font-size: 0.82em; margin-bottom: 24px;
+    }
+    th {
+      background: #1a1a1a; color: #ff0;
+      padding: 8px 10px; text-align: left;
+      border-bottom: 1px solid #333;
+    }
+    td { padding: 5px 10px; border-bottom: 1px solid #111; color: #aaa; }
+    tr.is-warn td { color: #f80; }
+    tr.is-warn td.cell-warn { color: #f00; font-weight: bold; }
+    tr:hover td { background: #111; }
+    .btn {
+      background: #111; color: #0ff;
+      border: 1px solid #0ff; border-radius: 6px;
+      padding: 8px 18px; font-family: monospace;
+      font-size: 0.9em; cursor: pointer;
+      margin-right: 8px; margin-bottom: 20px;
+    }
+    .btn:hover { background: #0ff; color: #000; }
+    .hidden { display: none !important; }
+    .filename { color: #555; font-size: 0.82em; margin-bottom: 14px; }
+    .footer {
+      color: #333; font-size: 0.75em;
+      text-align: center; margin-top: 40px;
+      padding-top: 14px; border-top: 1px solid #1a1a1a;
+    }
+    .thresholds-note {
+      font-size: 0.8em; color: #555;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>VDaT</h1>
+  <p class="subtitle">Log Review Tool &mdash; Open a VDaT session CSV to analyze your run</p>
+
+  <div class="drop-zone" id="dropZone">
+    <p>Drag and drop a VDaT CSV log file here, or click to browse.<br>
+    Works offline &mdash; no internet connection needed.</p>
+    <button class="drop-btn" onclick="document.getElementById('fileInput').click()">OPEN LOG FILE</button>
+    <input type="file" id="fileInput" accept=".csv">
+  </div>
+
+  <div id="results" class="hidden">
+
+    <div class="filename" id="fileName"></div>
+
+    <div class="session-meta" id="sessionMeta"></div>
+
+    <div class="section-title">SESSION SUMMARY</div>
+    <div class="summary-grid">
+      <div class="stat-card">
+        <div class="stat-label">Duration</div>
+        <div class="stat-value" id="rDuration">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Data Points</div>
+        <div class="stat-value" id="rPoints">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">&#9650; Max Pitch Up</div>
+        <div class="stat-value" id="rMaxPU">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">&#9660; Max Pitch Down</div>
+        <div class="stat-value" id="rMaxPD">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">&#9654; Max Roll Right</div>
+        <div class="stat-value" id="rMaxRR">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">&#9664; Max Roll Left</div>
+        <div class="stat-value" id="rMaxRL">--</div>
+      </div>
+      <div class="stat-card warn-card">
+        <div class="stat-label">Warning Crossings</div>
+        <div class="stat-value amber" id="rWarnCount">--</div>
+      </div>
+      <div class="stat-card warn-card">
+        <div class="stat-label">Time in Warning</div>
+        <div class="stat-value amber" id="rWarnTime">--</div>
+      </div>
+      <div class="stat-card warn-card">
+        <div class="stat-label">% Session in Warning</div>
+        <div class="stat-value amber" id="rWarnPct">--</div>
+      </div>
+      <div class="stat-card danger-card">
+        <div class="stat-label">Longest Warning Event</div>
+        <div class="stat-value red" id="rLongestWarn">--</div>
+      </div>
+    </div>
+
+    <div class="section-title">WARNING BREAKDOWN BY AXIS</div>
+    <div class="warn-breakdown" id="warnBreakdown"></div>
+
+    <div class="section-title">MOST AGGRESSIVE MOMENT</div>
+    <div class="highlight-box" id="worstMoment"></div>
+
+    <div class="section-title">WARNING TIMELINE</div>
+    <div class="timeline-wrap"><canvas id="timelineChart" height="18"></canvas></div>
+    <div class="timeline-label">Red = warning active &mdash; full session width</div>
+
+    <div class="section-title">PITCH &amp; ROLL OVER TIME</div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#0ff"></div>Pitch</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ff0"></div>Roll</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f00"></div>Warning</div>
+    </div>
+    <canvas id="chart" width="900" height="300"></canvas>
+
+    <button class="btn" onclick="exportWarningsOnly()">EXPORT WARNINGS ONLY</button>
+    <button class="btn" onclick="resetTool()">LOAD ANOTHER FILE</button>
+
+    <div class="section-title">FULL SESSION DATA</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Time (s)</th>
+          <th>Pitch (&deg;)</th>
+          <th>Roll (&deg;)</th>
+          <th>Heading (&deg;)</th>
+          <th>Warn</th>
+          <th>P&uarr;</th>
+          <th>P&darr;</th>
+          <th>R&rarr;</th>
+          <th>R&larr;</th>
+        </tr>
+      </thead>
+      <tbody id="dataTable"></tbody>
+    </table>
+
+  </div>
+
+  <div class="footer">VDaT Beta &nbsp;|&nbsp; &copy; 2026 GyverX &nbsp;|&nbsp; Built by a maker, for makers.</div>
+
+  <script>
+    let parsedData = [];
+    let sessionMeta = {};
+
+    document.getElementById('fileInput').addEventListener('change', e => {
+      if (e.target.files[0]) readFile(e.target.files[0]);
+    });
+
+    const dropZone = document.getElementById('dropZone');
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      if (e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);
+    });
+
+    function readFile(file) {
+      const reader = new FileReader();
+      reader.onload = e => parseCSV(e.target.result, file.name);
+      reader.readAsText(file);
+    }
+
+    function parseCSV(text, filename) {
+      const lines = text.trim().split('\n');
+      parsedData = [];
+      sessionMeta = {};
+
+      for (let line of lines) {
+        line = line.trim();
+        if (line.startsWith('#')) {
+          // Parse metadata header
+          const parts = line.substring(1).split(',');
+          if (parts.length >= 2) {
+            sessionMeta[parts[0].trim()] = parts.slice(1).join(',').trim();
+          }
+          continue;
+        }
+        if (line.startsWith('time_s')) continue; // column header row
+
+        const cols = line.split(',');
+        if (cols.length < 5) continue;
+
+        parsedData.push({
+          t:          parseFloat(cols[0]),
+          pitch:      parseFloat(cols[1]),
+          roll:       parseFloat(cols[2]),
+          heading:    parseFloat(cols[3]),
+          warn:       cols[4].trim() === '1',
+          wPitchUp:   cols.length > 5 ? cols[5].trim() === '1' : false,
+          wPitchDown: cols.length > 6 ? cols[6].trim() === '1' : false,
+          wRollRight: cols.length > 7 ? cols[7].trim() === '1' : false,
+          wRollLeft:  cols.length > 8 ? cols[8].trim() === '1' : false,
+        });
+      }
+
+      if (parsedData.length === 0) { alert('No valid data found.'); return; }
+
+      document.getElementById('fileName').textContent = '\uD83D\uDCC4 ' + filename;
+      dropZone.classList.add('hidden');
+      document.getElementById('results').classList.remove('hidden');
+
+      buildMeta();
+      buildSummary();
+      drawTimeline();
+      drawChart();
+      buildTable();
+    }
+
+    function buildMeta() {
+      const m = sessionMeta;
+      const rigName = m['rig_name'] || 'VDaT';
+      const date    = m['date']     || '—';
+      const time    = m['time']     || '—';
+      const version = m['version']  || '—';
+
+      let threshNote = '';
+      if (m['warn_pitch_up']) {
+        threshNote = 'Thresholds active during session &mdash; ' +
+          'Pitch Up: ' + m['warn_pitch_up'] + '&deg; &nbsp;' +
+          'Pitch Down: ' + m['warn_pitch_down'] + '&deg; &nbsp;' +
+          'Roll Right: ' + m['warn_roll_right'] + '&deg; &nbsp;' +
+          'Roll Left: ' + m['warn_roll_left'] + '&deg;';
+      }
+
+      document.getElementById('sessionMeta').innerHTML =
+        '<div class="meta-item"><div class="meta-label">Rig</div><div class="meta-value">' + rigName + '</div></div>' +
+        '<div class="meta-item"><div class="meta-label">Date</div><div class="meta-value">' + date + '</div></div>' +
+        '<div class="meta-item"><div class="meta-label">Time</div><div class="meta-value">' + time + '</div></div>' +
+        '<div class="meta-item"><div class="meta-label">Version</div><div class="meta-value">' + version + '</div></div>' +
+        (threshNote ? '<div style="width:100%;"><div class="thresholds-note">' + threshNote + '</div></div>' : '');
+
+      // Update page title with rig name
+      document.title = 'VDaT \u2014 ' + rigName + ' Log Review';
+    }
+
+    function buildSummary() {
+      const d = parsedData;
+      const duration = d[d.length - 1].t;
+
+      let maxPU = 0, maxPD = 0, maxRR = 0, maxRL = 0;
+      let warnFrames = 0, warnCount = 0;
+      let wasWarn = false;
+      let longestWarnRun = 0, currentWarnRun = 0;
+      let warnPU = 0, warnPD = 0, warnRR = 0, warnRL = 0;
+      let warnFramesPU = 0, warnFramesPD = 0, warnFramesRR = 0, warnFramesRL = 0;
+      let worstScore = 0, worstPoint = null;
+
+      d.forEach(row => {
+        if (row.pitch > 0 && row.pitch > maxPU) maxPU = row.pitch;
+        if (row.pitch < 0 && Math.abs(row.pitch) > maxPD) maxPD = Math.abs(row.pitch);
+        if (row.roll  > 0 && row.roll  > maxRR) maxRR = row.roll;
+        if (row.roll  < 0 && Math.abs(row.roll)  > maxRL) maxRL = Math.abs(row.roll);
+
+        if (row.warn) {
+          warnFrames++;
+          currentWarnRun++;
+          if (currentWarnRun > longestWarnRun) longestWarnRun = currentWarnRun;
+        } else {
+          currentWarnRun = 0;
+        }
+        if (row.warn && !wasWarn) warnCount++;
+        wasWarn = row.warn;
+
+        if (row.wPitchUp)   { warnPU++;  warnFramesPU++; }
+        if (row.wPitchDown) { warnPD++;  warnFramesPD++; }
+        if (row.wRollRight) { warnRR++;  warnFramesRR++; }
+        if (row.wRollLeft)  { warnRL++;  warnFramesRL++; }
+
+        // Most aggressive = highest combined absolute pitch + roll
+        const score = Math.abs(row.pitch) + Math.abs(row.roll);
+        if (score > worstScore) { worstScore = score; worstPoint = row; }
+      });
+
+      const warnSecs = (warnFrames * 0.2).toFixed(1);
+      const warnPct  = ((warnFrames / d.length) * 100).toFixed(1);
+      const longestSecs = (longestWarnRun * 0.2).toFixed(1);
+
+      document.getElementById('rDuration').textContent  = duration.toFixed(1) + 's';
+      document.getElementById('rPoints').textContent    = d.length;
+      document.getElementById('rMaxPU').textContent     = '+' + maxPU.toFixed(1) + '\u00B0';
+      document.getElementById('rMaxPD').textContent     = '-' + maxPD.toFixed(1) + '\u00B0';
+      document.getElementById('rMaxRR').textContent     = '+' + maxRR.toFixed(1) + '\u00B0';
+      document.getElementById('rMaxRL').textContent     = '-' + maxRL.toFixed(1) + '\u00B0';
+      document.getElementById('rWarnCount').textContent = warnCount;
+      document.getElementById('rWarnTime').textContent  = warnSecs + 's';
+      document.getElementById('rWarnPct').textContent   = warnPct + '%';
+      document.getElementById('rLongestWarn').textContent = longestSecs + 's';
+
+      // Warning breakdown by axis
+      document.getElementById('warnBreakdown').innerHTML =
+        axisCard('\u25B2 Pitch Up',    warnPU,  warnFramesPU) +
+        axisCard('\u25BC Pitch Down',  warnPD,  warnFramesPD) +
+        axisCard('\u25BA Roll Right',  warnRR,  warnFramesRR) +
+        axisCard('\u25C4 Roll Left',   warnRL,  warnFramesRL);
+
+      // Most aggressive moment
+      if (worstPoint) {
+        document.getElementById('worstMoment').innerHTML =
+          '<div class="highlight-label">Highest combined pitch + roll angle in the session</div>' +
+          '<div class="highlight-value">' +
+            'At <span>' + worstPoint.t.toFixed(2) + 's</span> &nbsp;&mdash;&nbsp; ' +
+            'Pitch: <span>' + (worstPoint.pitch >= 0 ? '+' : '') + worstPoint.pitch.toFixed(1) + '\u00B0</span> &nbsp;' +
+            'Roll: <span>' + (worstPoint.roll  >= 0 ? '+' : '') + worstPoint.roll.toFixed(1)  + '\u00B0</span>' +
+            (worstPoint.warn ? ' &nbsp;<span style="color:#f00">\u26A0 IN WARNING</span>' : '') +
+          '</div>';
+      }
+    }
+
+    function axisCard(label, crossings, frames) {
+      const secs = (frames * 0.2).toFixed(1);
+      return '<div class="warn-axis">' +
+        '<div class="warn-axis-label">' + label + '</div>' +
+        '<div class="warn-axis-count">' + crossings + ' crossings</div>' +
+        '<div class="warn-axis-time">' + secs + 's in warning</div>' +
+        '</div>';
+    }
+
+    function drawTimeline() {
+      const canvas = document.getElementById('timelineChart');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width = canvas.offsetWidth || 900;
+      const h = 18;
+      canvas.height = h;
+      const maxT = parsedData[parsedData.length - 1].t || 1;
+
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(0, 0, w, h);
+
+      parsedData.forEach((d, i) => {
+        if (!d.warn) return;
+        const x = (d.t / maxT) * w;
+        ctx.fillStyle = '#f00';
+        ctx.fillRect(Math.floor(x), 0, Math.ceil(w / parsedData.length) + 1, h);
+      });
+    }
+
+    function drawChart() {
+      const canvas = document.getElementById('chart');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width, h = canvas.height;
+      const padL = 44, padR = 20, padT = 16, padB = 28;
+      const plotW = w - padL - padR;
+      const plotH = h - padT - padB;
+      const maxT  = parsedData[parsedData.length - 1].t || 1;
+      const maxDeg = 90;
+      const zeroY  = padT + plotH / 2;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Grid
+      [-60, -30, 0, 30, 60].forEach(deg => {
+        const y = padT + plotH / 2 - (deg / maxDeg) * (plotH / 2);
+        ctx.strokeStyle = deg === 0 ? '#333' : '#1a1a1a';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
+        ctx.fillStyle = '#444'; ctx.font = '9px monospace'; ctx.textAlign = 'right';
+        ctx.fillText(deg + '\u00B0', padL - 4, y + 3);
+      });
+
+      // Time labels
+      const tickInterval = Math.max(1, Math.ceil(maxT / 12));
+      ctx.fillStyle = '#444'; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+      for (let t = 0; t <= maxT; t += tickInterval) {
+        ctx.fillText(t + 's', padL + (t / maxT) * plotW, h - 6);
+      }
+
+      function plotLine(key, color) {
+        for (let i = 1; i < parsedData.length; i++) {
+          const p = parsedData[i-1], c = parsedData[i];
+          const x1 = padL + (p.t / maxT) * plotW;
+          const y1 = padT + plotH / 2 - (p[key] / maxDeg) * (plotH / 2);
+          const x2 = padL + (c.t / maxT) * plotW;
+          const y2 = padT + plotH / 2 - (c[key] / maxDeg) * (plotH / 2);
+          ctx.strokeStyle = (p.warn || c.warn) ? '#f00' : color;
+          ctx.lineWidth   = (p.warn || c.warn) ? 2 : 1.5;
+          ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        }
+      }
+
+      plotLine('pitch', '#0ff');
+      plotLine('roll',  '#ff0');
+
+      ctx.font = '10px monospace'; ctx.textAlign = 'left';
+      ctx.fillStyle = '#0ff'; ctx.fillText('\u2014 Pitch',   padL, h - 6);
+      ctx.fillStyle = '#ff0'; ctx.fillText('\u2014 Roll',    padL + 64, h - 6);
+      ctx.fillStyle = '#f00'; ctx.fillText('\u2014 Warning', padL + 128, h - 6);
+    }
+
+    function buildTable() {
+      const tbody = document.getElementById('dataTable');
+      tbody.innerHTML = '';
+      parsedData.forEach(row => {
+        const tr = document.createElement('tr');
+        if (row.warn) tr.classList.add('is-warn');
+        tr.innerHTML =
+          '<td>' + row.t.toFixed(2) + '</td>' +
+          '<td>' + (row.pitch >= 0 ? '+' : '') + row.pitch.toFixed(1) + '\u00B0</td>' +
+          '<td>' + (row.roll  >= 0 ? '+' : '') + row.roll.toFixed(1)  + '\u00B0</td>' +
+          '<td>' + row.heading.toFixed(0) + '\u00B0</td>' +
+          '<td class="cell-warn">' + (row.warn       ? '\u26A0' : '') + '</td>' +
+          '<td>' + (row.wPitchUp   ? '\u25B2' : '') + '</td>' +
+          '<td>' + (row.wPitchDown ? '\u25BC' : '') + '</td>' +
+          '<td>' + (row.wRollRight ? '\u25BA' : '') + '</td>' +
+          '<td>' + (row.wRollLeft  ? '\u25C4' : '') + '</td>';
+        tbody.appendChild(tr);
+      });
+    }
+
+    function exportWarningsOnly() {
+      const warnings = parsedData.filter(r => r.warn);
+      if (warnings.length === 0) { alert('No warning rows in this session.'); return; }
+      const m = sessionMeta;
+      let csv = '';
+      if (m['rig_name']) csv += '# rig_name,' + m['rig_name'] + '\n';
+      if (m['date'])     csv += '# date,' + m['date'] + '\n';
+      if (m['time'])     csv += '# time,' + m['time'] + '\n';
+      csv += '# export_type,warnings_only\n';
+      csv += 'time_s,pitch_deg,roll_deg,heading_deg,warn,warn_pitch_up,warn_pitch_down,warn_roll_right,warn_roll_left\n';
+      warnings.forEach(r => {
+        csv += r.t.toFixed(2) + ',' + r.pitch.toFixed(1) + ',' + r.roll.toFixed(1) + ',' +
+               r.heading.toFixed(0) + ',1,' +
+               (r.wPitchUp ? '1':'0') + ',' + (r.wPitchDown ? '1':'0') + ',' +
+               (r.wRollRight ? '1':'0') + ',' + (r.wRollLeft ? '1':'0') + '\n';
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'vdat-warnings-only.csv';
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+
+    function resetTool() {
+      parsedData = []; sessionMeta = {};
+      document.getElementById('results').classList.add('hidden');
+      document.getElementById('dropZone').classList.remove('hidden');
+      document.getElementById('fileInput').value = '';
+      document.title = 'VDaT Log Review';
+    }
+  </script>
+</body>
+</html>
