@@ -14,18 +14,11 @@ No internet connection required. No app to install. No account needed. Connect y
 <img width="260" alt="VDaT dashboard1" src="https://github.com/user-attachments/assets/57f4b73a-b975-418f-916c-2eceb0edd2db" />
 </td>
 <td>
-
 VDaT stands for Vehicle Data and Telemetry. Not just a crawler tool — any vehicle, any scale. The sensor collects real data as you drive, and VDaT turns it into something you can actually look at: charts, peaks, warning history, the kind of information that helps you understand how a rig actually behaves instead of guessing.
-
-
 </td>
 </tr>
 </table>
-
-
 ---
-
-// <img width="720" height="1600" alt="Screenshot_20260701-184642" src="https://github.com/user-attachments/assets/57f4b73a-b975-418f-916c-2eceb0edd2db" />
 ## Features
 
 - **Live pitch and roll**, with accelerometer data coming soon — independent peak tracking per direction (up/down, left/right)
