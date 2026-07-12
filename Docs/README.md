@@ -7,6 +7,7 @@
 
 No internet connection required. No app to install. No account needed. Connect your phone to the truck's WiFi access point, open a browser, and your full telemetry dashboard loads instantly — attitude indicator, warning system, session logging, and all.
 
+# VDaT Studio
 Use [VDaT Studio](https://github.com/GyverX1/VDaT-Studio) to Flash the firmware and read logs and more
 
 ---
