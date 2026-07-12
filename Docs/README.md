@@ -1,4 +1,3 @@
-<img width="500" height="303" alt="BNO085" src="https://github.com/user-attachments/assets/a46d6af4-5dfd-48a2-a1eb-6c01915907aa" />
 <img width="200" height="63" alt="vdat-logo" src="https://github.com/user-attachments/assets/c4d36f6a-cf97-4bf2-a109-70f9d9426919" />
 
 # VDaT
@@ -21,6 +20,7 @@ VDaT stands for Vehicle Data and Telemetry. Not just a crawler tool — any vehi
 </td>
 </tr>
 </table>
+
 ---
 ## Features
 
@@ -47,7 +47,7 @@ VDaT stands for Vehicle Data and Telemetry. Not just a crawler tool — any vehi
 | Microcontroller | ESP32-S3 SuperMini (HW-747), 4MB Flash |
 | IMU | BNO085 9-DOF IMU breakout |
 | Power | USB-C cable, data-capable |
-| Wiring | 4x Dupont jumper wires (female-to-female) |
+| Wiring | 6x Dupont jumper wires (female-to-female) |
 
 **Total assembled weight: ~12 grams.**
 
@@ -67,6 +67,8 @@ ESP32-S3 SuperMini    IMU (BNO085)
 ─────────────────     ────────────
 GP13  (SDA)      ──── SDA
 GP12  (SCL)      ──── SCL
+GP10  (RST)      ──── RST
+GP11  (INT)      ──── INT
 3V3              ──── VCC
 GND              ──── GND
 ```
@@ -121,6 +123,10 @@ All user-configurable constants live in `config.h`:
 // I2C Pins (IMU)
 #define SDA_PIN      13
 #define SCL_PIN      12
+
+// IMU Hardware Control
+#define IMU_RST_PIN  10
+#define IMU_INT_PIN  11
 
 // IMU
 #define IMU_ADDRESS  0x4B
@@ -183,13 +189,14 @@ The CSV file format includes a metadata header with rig name, date, time, firmwa
 ## Project Structure
 
 ```
-VDaT-S3/
-├── VDaT-S3.ino          Main sketch
+VDaT/
+├── VDaT.ino              Main sketch
 ├── config.h              User configuration
 ├── globals.h / .cpp      Shared variables and objects
 ├── imu.h / .cpp          BNO085 sensor interface
 ├── display.h / .cpp      OLED display driver (considered feature, not part of standard setup)
 ├── boot_anim.h / .cpp    Animated boot sequence
+├── vdat_logo_bitmap.h    Boot logo bitmap (1-bit OLED)
 ├── web.h / .cpp          WiFi AP and web server
 ├── riglog.h / .cpp       Rig-side session logging (LittleFS)
 ├── serial_sync.h / .cpp  USB serial protocol for VDaT Studio
