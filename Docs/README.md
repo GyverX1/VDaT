@@ -1,3 +1,4 @@
+<img width="500" height="303" alt="BNO085" src="https://github.com/user-attachments/assets/a46d6af4-5dfd-48a2-a1eb-6c01915907aa" />
 <img width="200" height="63" alt="vdat-logo" src="https://github.com/user-attachments/assets/c4d36f6a-cf97-4bf2-a109-70f9d9426919" />
 
 # VDaT
@@ -50,7 +51,7 @@ VDaT stands for Vehicle Data and Telemetry. Not just a crawler tool — any vehi
 
 **Total assembled weight: ~12 grams.**
 
-<img width="243" height="200" alt="esp32-s3sm" src="https://github.com/user-attachments/assets/73c56355-f08a-42dd-85a1-129087fe4253" /><img width="147" height="200" alt="ESP32-S3-Top-sm" src="https://github.com/user-attachments/assets/f276ea90-3706-4ae5-89e0-485d46353a4c" />
+<img width="243" height="200" alt="esp32-s3sm" src="https://github.com/user-attachments/assets/73c56355-f08a-42dd-85a1-129087fe4253" /><img width="147" height="200" alt="ESP32-S3-Top-sm" src="https://github.com/user-attachments/assets/f276ea90-3706-4ae5-89e0-485d46353a4c" /><img width="330" height="200" alt="BNO085" src="https://github.com/user-attachments/assets/9ce0b1c5-b0eb-468a-aa81-ca725eef3b42" />
 
 
 An onboard display is possible on a second I2C bus but isn't part of the standard build right now — **Soon**.
