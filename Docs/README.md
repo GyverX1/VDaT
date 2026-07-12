@@ -49,7 +49,8 @@ VDaT stands for Vehicle Data and Telemetry. Not just a crawler tool — any vehi
 | Wiring | 4x Dupont jumper wires (female-to-female) |
 
 **Total assembled weight: ~12 grams.**
-<img width="364" height="300" alt="esp32-s3sm" src="https://github.com/user-attachments/assets/73c56355-f08a-42dd-85a1-129087fe4253" /><img width="300" height="407" alt="ESP32-S3-Top-sm" src="https://github.com/user-attachments/assets/f276ea90-3706-4ae5-89e0-485d46353a4c" />
+
+<img width="243" height="200" alt="esp32-s3sm" src="https://github.com/user-attachments/assets/73c56355-f08a-42dd-85a1-129087fe4253" /><img width="147" height="200" alt="ESP32-S3-Top-sm" src="https://github.com/user-attachments/assets/f276ea90-3706-4ae5-89e0-485d46353a4c" />
 
 
 An onboard display is possible on a second I2C bus but isn't part of the standard build right now — **Soon**.
