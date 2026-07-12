@@ -21,7 +21,7 @@ VDaT stands for Vehicle Data and Telemetry. Not just a crawler tool — any vehi
 </td>
 </tr>
 </table>
-VDaT stands for Vehicle Data and Telemetry. Not just a crawler tool — any vehicle, any scale. The sensor collects real data as you drive, and VDaT turns it into something you can actually look at: charts, peaks, warning history, the kind of information that helps you understand how a rig actually behaves instead of guessing.
+
 
 ---
 
